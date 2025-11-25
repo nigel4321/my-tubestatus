@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import JourneyLeg from "./JourneyLeg";
 import DisruptionAlert from "./DisruptionAlert";
+import LineSummary from "./LineSummary";
 import { useState } from "react";
 
 interface RouteCardProps {
@@ -37,13 +38,21 @@ export default function RouteCard({
 }: RouteCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const tubeLines = Array.from(
+    new Set(
+      legs
+        .filter((leg) => leg.mode === "tube" && leg.lineName)
+        .map((leg) => leg.lineName!)
+    )
+  );
+
   return (
     <Card
       className={`hover-elevate ${isFastest ? "border-primary/30 bg-primary/5" : ""}`}
       data-testid="card-route"
     >
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -75,6 +84,7 @@ export default function RouteCard({
             </div>
           </div>
         </div>
+        <LineSummary lines={tubeLines} />
       </CardHeader>
       <CardContent className="space-y-4">
         {disruptions.length > 0 && (

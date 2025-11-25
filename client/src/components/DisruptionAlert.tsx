@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DisruptionAlertProps {
@@ -12,15 +12,15 @@ export default function DisruptionAlert({
 }: DisruptionAlertProps) {
   const config = {
     info: {
-      icon: Info,
-      className: "border-primary/20 bg-primary/5 text-primary",
+      icon: CheckCircle2,
+      className: "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400",
     },
     warning: {
-      icon: AlertTriangle,
-      className: "border-yellow-600/20 bg-yellow-600/5 text-yellow-800 dark:text-yellow-500",
+      icon: Clock,
+      className: "border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400",
     },
     severe: {
-      icon: AlertCircle,
+      icon: XCircle,
       className: "border-destructive/20 bg-destructive/5 text-destructive",
     },
   };
