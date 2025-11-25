@@ -1,174 +1,39 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import JourneyHeader from "@/components/JourneyHeader";
 import RouteCard from "@/components/RouteCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
-
-// TODO: remove mock functionality - this will be replaced with real TfL API data
-const MOCK_ROUTES = [
-  {
-    duration: 35,
-    departureTime: "Now",
-    arrivalTime: "15:05",
-    legs: [
-      {
-        mode: "tube" as const,
-        lineName: "Northern",
-        direction: "Edgware",
-        from: "High Barnet",
-        to: "Tottenham Court Road",
-        duration: 28,
-        stops: 14,
-      },
-      {
-        mode: "walking" as const,
-        from: "Tottenham Court Road",
-        to: "Tottenham Court Road (Central)",
-        duration: 4,
-        distance: 200,
-      },
-      {
-        mode: "tube" as const,
-        lineName: "Central",
-        direction: "Ealing Broadway",
-        from: "Tottenham Court Road",
-        to: "Chancery Lane",
-        duration: 3,
-        stops: 1,
-      },
-    ],
-    disruptions: [
-      {
-        severity: "info" as const,
-        message: "Good service on Northern and Central lines",
-      },
-    ],
-    isFastest: true,
-  },
-  {
-    duration: 42,
-    departureTime: "Now",
-    arrivalTime: "15:12",
-    legs: [
-      {
-        mode: "tube" as const,
-        lineName: "Northern",
-        direction: "Edgware",
-        from: "High Barnet",
-        to: "King's Cross St. Pancras",
-        duration: 24,
-        stops: 12,
-      },
-      {
-        mode: "walking" as const,
-        from: "King's Cross St. Pancras",
-        to: "King's Cross St. Pancras (Piccadilly)",
-        duration: 5,
-        distance: 250,
-      },
-      {
-        mode: "tube" as const,
-        lineName: "Piccadilly",
-        direction: "Cockfosters",
-        from: "King's Cross St. Pancras",
-        to: "Holborn",
-        duration: 4,
-        stops: 2,
-      },
-      {
-        mode: "walking" as const,
-        from: "Holborn",
-        to: "Chancery Lane",
-        duration: 9,
-        distance: 450,
-      },
-    ],
-    disruptions: [],
-    isFastest: false,
-  },
-  {
-    duration: 38,
-    departureTime: "14:35",
-    arrivalTime: "15:13",
-    legs: [
-      {
-        mode: "tube" as const,
-        lineName: "Northern",
-        direction: "Edgware",
-        from: "High Barnet",
-        to: "Camden Town",
-        duration: 15,
-        stops: 8,
-      },
-      {
-        mode: "walking" as const,
-        from: "Camden Town",
-        to: "Camden Town (Northern Bank)",
-        duration: 3,
-        distance: 100,
-      },
-      {
-        mode: "tube" as const,
-        lineName: "Northern",
-        direction: "Morden",
-        from: "Camden Town",
-        to: "Tottenham Court Road",
-        duration: 13,
-        stops: 6,
-      },
-      {
-        mode: "walking" as const,
-        from: "Tottenham Court Road",
-        to: "Tottenham Court Road (Central)",
-        duration: 4,
-        distance: 200,
-      },
-      {
-        mode: "tube" as const,
-        lineName: "Central",
-        direction: "Ealing Broadway",
-        from: "Tottenham Court Road",
-        to: "Chancery Lane",
-        duration: 3,
-        stops: 1,
-      },
-    ],
-    disruptions: [
-      {
-        severity: "warning" as const,
-        message: "Minor delays on Northern line southbound due to earlier signal failure",
-      },
-    ],
-    isFastest: false,
-  },
-];
+import type { Journey } from "@shared/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [routes, setRoutes] = useState(MOCK_ROUTES);
   const [from, setFrom] = useState("High Barnet");
   const [to, setTo] = useState("Chancery Lane");
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const [canRefresh, setCanRefresh] = useState(true);
 
-  // TODO: remove mock functionality - simulate initial load
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // TODO: remove mock functionality - simulate auto-refresh every 2 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (canRefresh) {
-        handleRefresh();
+  // Fetch journey data from our backend API
+  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery<{ journeys: Journey[] }>({
+    queryKey: ["/api/journeys", from, to],
+    queryFn: async () => {
+      const params = new URLSearchParams({ from, to });
+      const response = await fetch(`/api/journeys?${params}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch journey data");
       }
-    }, 120000);
-    return () => clearInterval(interval);
-  }, [canRefresh]);
+      
+      return response.json();
+    },
+    refetchInterval: 120000, // Auto-refresh every 2 minutes
+    staleTime: 30000, // Data considered fresh for 30 seconds
+  });
+
+  const routes = data?.journeys || [];
+  const lastUpdated = data && dataUpdatedAt ? new Date(dataUpdatedAt) : undefined;
 
   // Rate limiting - re-enable refresh button after 30 seconds
   useEffect(() => {
@@ -180,8 +45,8 @@ export default function HomePage() {
     }
   }, [canRefresh]);
 
-  // TODO: remove mock functionality - this will call real TfL API
-  const handleRefresh = () => {
+  // Handle manual refresh with rate limiting
+  const handleRefresh = async () => {
     const now = Date.now();
     const timeSinceLastRefresh = now - lastRefreshTime;
     
@@ -191,70 +56,19 @@ export default function HomePage() {
       return;
     }
 
-    setIsRefreshing(true);
     setCanRefresh(false);
     setLastRefreshTime(now);
     console.log("Refreshing journey data from TfL API...");
     
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-      // In real implementation, this would update routes with fresh API data
-      setRoutes([...MOCK_ROUTES]);
-    }, 1000);
+    await refetch();
   };
 
-  // Helper function to reverse a route's legs
-  const reverseRoute = (route: typeof MOCK_ROUTES[0]) => {
-    const reversedLegs = [...route.legs].reverse().map(leg => {
-      const reversedLeg: any = {
-        ...leg,
-        from: leg.to,
-        to: leg.from,
-      };
-      
-      // Only update direction for tube legs
-      if (leg.mode === "tube" && leg.direction) {
-        reversedLeg.direction = getOppositeDirection(leg.direction);
-      }
-      
-      return reversedLeg;
-    });
-
-    return {
-      ...route,
-      legs: reversedLegs,
-    };
-  };
-
-  // Helper to get opposite direction for tube lines
-  const getOppositeDirection = (direction: string): string => {
-    const opposites: Record<string, string> = {
-      "Edgware": "Morden",
-      "Morden": "Edgware",
-      "Ealing Broadway": "Epping",
-      "Epping": "Ealing Broadway",
-      "Cockfosters": "Heathrow",
-      "Heathrow": "Cockfosters",
-      "High Barnet": "Edgware",
-    };
-    return opposites[direction] || direction;
-  };
-
+  // Handle swapping journey direction
   const handleSwapDirection = () => {
     console.log(`Swapping direction: ${to} to ${from}`);
-    const newFrom = to;
-    const newTo = from;
-    setFrom(newFrom);
-    setTo(newTo);
-    
-    // Reverse all routes
-    setIsLoading(true);
-    setTimeout(() => {
-      const reversedRoutes = routes.map(reverseRoute);
-      setRoutes(reversedRoutes);
-      setIsLoading(false);
-    }, 800);
+    setFrom(to);
+    setTo(from);
+    // The query will automatically refetch due to queryKey change
   };
 
   return (
@@ -265,13 +79,38 @@ export default function HomePage() {
         lastUpdated={lastUpdated}
         onRefresh={handleRefresh}
         onSwap={handleSwapDirection}
-        isRefreshing={isRefreshing}
+        isRefreshing={isFetching}
         canRefresh={canRefresh}
       />
       
       <main className="max-w-2xl mx-auto px-4 py-6">
         {isLoading ? (
           <LoadingSkeleton />
+        ) : error ? (
+          <Alert className="border-destructive/20 bg-destructive/5">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              <div className="flex flex-col gap-3">
+                <p>Failed to load journey data. Please check your connection and try again.</p>
+                <Button 
+                  onClick={() => refetch()} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-fit"
+                  data-testid="button-retry"
+                >
+                  Retry
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        ) : routes.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No journey options found for this route. Please try a different destination.
+            </AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-4">
             {routes.map((route, index) => (

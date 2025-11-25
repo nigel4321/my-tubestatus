@@ -16,3 +16,34 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Journey types for TfL integration
+export interface JourneyLeg {
+  mode: "tube" | "walking";
+  lineName?: string;
+  direction?: string;
+  from: string;
+  to: string;
+  duration: number;
+  stops?: number;
+  distance?: number;
+}
+
+export interface Disruption {
+  severity: "info" | "warning" | "severe";
+  message: string;
+}
+
+export interface Journey {
+  duration: number;
+  departureTime: string;
+  arrivalTime: string;
+  legs: JourneyLeg[];
+  disruptions: Disruption[];
+  isFastest?: boolean;
+}
+
+export interface JourneyRequest {
+  from: string;
+  to: string;
+}
