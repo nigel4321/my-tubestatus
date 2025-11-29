@@ -2,11 +2,7 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install all dependencies (including devDependencies for build)
 RUN npm ci
 
 # Copy source code
@@ -19,8 +15,6 @@ RUN npm run build
 FROM node:20-alpine AS production
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
