@@ -1,4 +1,4 @@
-````markdown name=README.md
+
 # Tube Journey Status App — High Barnet to Chancery Lane
 
 A modern web application for real-time status of journeys on the London Underground, focusing on the High Barnet to Chancery Lane route. Built with a full stack TypeScript architecture and designed to comply with Transport for London (TfL) standards for accessibility, design, and API usage.
@@ -128,4 +128,4 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 For more details, see [replit.md](replit.md) and [design_guidelines.md](design_guidelines.md).
-````
+
