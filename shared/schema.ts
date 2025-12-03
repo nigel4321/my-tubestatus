@@ -17,33 +17,46 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Journey types for TfL integration
-export interface JourneyLeg {
-  mode: "tube" | "walking";
-  lineName?: string;
-  direction?: string;
-  from: string;
-  to: string;
-  duration: number;
-  stops?: number;
-  distance?: number;
-}
+// Journey types for TfL integration - Zod schemas
+export const journeyLegSchema = z.object({
+  mode: z.enum(["tube", "walking"]),
+  lineName: z.string().optional(),
+  direction: z.string().optional(),
+  from: z.string(),
+  to: z.string(),
+  duration: z.number(),
+  stops: z.number().optional(),
+  distance: z.number().optional(),
+});
 
-export interface Disruption {
-  severity: "info" | "warning" | "severe";
-  message: string;
-}
+export const disruptionSchema = z.object({
+  severity: z.enum(["info", "warning", "severe"]),
+  message: z.string(),
+});
 
-export interface Journey {
-  duration: number;
-  departureTime: string;
-  arrivalTime: string;
-  legs: JourneyLeg[];
-  disruptions: Disruption[];
-  isFastest?: boolean;
-}
+export const journeySchema = z.object({
+  duration: z.number(),
+  departureTime: z.string(),
+  arrivalTime: z.string(),
+  legs: z.array(journeyLegSchema),
+  disruptions: z.array(disruptionSchema),
+  isFastest: z.boolean().optional(),
+});
 
-export interface JourneyRequest {
-  from: string;
-  to: string;
-}
+export const journeyRequestSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+});
+
+// Insert schemas for validation
+export const insertJourneyLegSchema = journeyLegSchema;
+export const insertDisruptionSchema = disruptionSchema;
+export const insertJourneySchema = journeySchema.extend({
+  isFastest: z.boolean(),
+});
+
+// TypeScript types inferred from Zod schemas
+export type JourneyLeg = z.infer<typeof journeyLegSchema>;
+export type Disruption = z.infer<typeof disruptionSchema>;
+export type Journey = z.infer<typeof journeySchema>;
+export type JourneyRequest = z.infer<typeof journeyRequestSchema>;
