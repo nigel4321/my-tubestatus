@@ -64,3 +64,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ env.TAG }}
             ghcr.io/${{ github.repository }}:latest
+  summary: 
