@@ -65,3 +65,7 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ env.TAG }}
             ghcr.io/${{ github.repository }}:latest
   summary: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: echo "This is a placeholder step"
