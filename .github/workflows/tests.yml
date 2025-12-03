@@ -2,7 +2,7 @@ name: Run unit tests
 
 on:
   workflow_dispatch:
-  workflow_call
+  workflow_call:
 
 
 jobs:
