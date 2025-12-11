@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
   build-and-push:
     uses: ./.github/workflows/build.yml
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs: unittest
     permissions:
       contents: write
